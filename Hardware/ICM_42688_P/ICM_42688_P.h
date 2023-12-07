@@ -164,6 +164,10 @@ typedef struct{
 	double yaw;
 }ATTU;
 
+extern uint8_t Send_Start_Flag;	//????AC?????
+extern uint8_t DMA_BusyFlag;	//DMA?????
+
+
 void ICM_Port_Init(void);
 
 unsigned char ICM_IIC_Read_Byte(unsigned char ack);

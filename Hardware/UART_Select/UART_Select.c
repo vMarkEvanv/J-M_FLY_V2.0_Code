@@ -7,6 +7,8 @@
 u8 USART3_RX_BUF[USART3_MAX_RECV_LEN]; 				//接收缓冲,最大USART3_MAX_RECV_LEN个字节.
 u8  USART3_TX_BUF[USART3_MAX_SEND_LEN]; 			//发送缓冲,最大USART3_MAX_SEND_LEN字节
  
+ extern u8 RxBuf[];
+ extern int CNT;
 //通过判断接收连续2个字符之间的时间差不大于10ms来决定是不是一次连续的数据.
 //如果2个字符接收间隔超过10ms,则认为不是1次连续数据.也就是超过10ms没有接收到
 //任何数据,则表示此次接收完毕.
@@ -118,6 +120,19 @@ void USART3_IRQHandler(void)
 					USART3_RX_STA|=0x8000;	//则信息接收完成了 
 				} 
 		}
+		if(Res == 0xC8){
+							for(int i=0;i<24;i++){
+								RxBuf[i] = 0;
+							}
+							CNT = 0;
+							RxBuf[CNT] = Res;
+							
+						}
+						else{
+							CNT++;
+							RxBuf[CNT] = Res;
+							
+						}
 		USART3_RX_Data();
 		//PCout(13)=~PCout(13);
 		//USART_SendData(USART1,Res);

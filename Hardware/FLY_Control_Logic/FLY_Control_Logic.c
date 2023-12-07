@@ -56,61 +56,29 @@ void FLY_BIOS_INIT(){
 	
 	//气压计初始化
 	IIC_Init();
-	//while(!bmp280Init());
+	while(!bmp280Init());
 	
-	//选择源串口初始化
-	UART_Init(115200);
+	//源串口初始化
+//	UART_Init(115200);
 	
-	Pitch_M0_PID.Kp = 6;
-	Pitch_M0_PID.Ki = 0.09;
-	Pitch_M0_PID.Kd = -2.34;
-	Pitch_M1_PID.Kp = 5;
-	Pitch_M1_PID.Ki = 0.09;
-	Pitch_M1_PID.Kd = -2.34;
 	
 	attu_loss.pitch=0;
 	attu_loss.row = 0;
 	attu_loss.yaw = 0;
-//	FIXED_VALUE.X =0;
-//	FIXED_VALUE.Y =0;
-//	FIXED_VALUE.Z =0;
-//	
-//	double temp_x = 0;
-//	double temp_y = 0;
-//	double temp_z = 0;
-//	
-//	int n = 10000;
-//	while(n--){
-//		GYRO_ACC_TEMP_GET();
-//		temp_x += Gyro_Get.X;
-//		temp_y += Gyro_Get.Y;
-//		temp_z += Gyro_Get.Z;
-//	}
-//	FIXED_VALUE.X = temp_x/10000.0;
-//	FIXED_VALUE.Y = temp_y/10000.0;
-//	FIXED_VALUE.Z = temp_z/10000.0;
-	
-	
-// 	while(SD_Init())//检测不到SD卡
-//	{
-//		PCout(13)=~PCout(13);
-//	}
-	//CH9141_Init();
-	//CH9141_EN();
-	FLY_PWM_Port_Init();
-	base_pwm.M0=200;
-	base_pwm.M1=200;
-	base_pwm.M2=200;
-	base_pwm.M3=200;
-	Set_Duty(0,0,0,0);
-	delay_ms(500);
-	delay_ms(500);
-	delay_ms(500);
-	delay_ms(500);
-	delay_ms(500);
-	delay_ms(500);
-	delay_ms(500);
-	delay_ms(500);
+//	FLY_PWM_Port_Init();
+//	base_pwm.M0=200;
+//	base_pwm.M1=200;
+//	base_pwm.M2=200;
+//	base_pwm.M3=200;
+//	Set_Duty(0,0,0,0);
+//	delay_ms(500);
+//	delay_ms(500);
+//	delay_ms(500);
+//	delay_ms(500);
+//	delay_ms(500);
+//	delay_ms(500);
+//	delay_ms(500);
+//	delay_ms(500);
 }
 
 #define pi 3.1415926
@@ -196,9 +164,9 @@ void TIM4_IRQHandler(void)
 		PCout(13) = ~PCout(13);
 		GYRO_ACC_TEMP_GET();
 		Attitude_Calculate();
-		Load_Attu_PID(attu.pitch, attu.row, 0, 0, 0, 0);
+		//Load_Attu_PID(attu.pitch, attu.row, 0, 0, 0, 0);
 		//printf("%d,%d\n",m_pwm.M0,m_pwm.M1);
-		Set_Duty(m_pwm.M0,m_pwm.M1,m_pwm.M2,m_pwm.M3);
+		//Set_Duty(m_pwm.M0,m_pwm.M1,m_pwm.M2,m_pwm.M3);
 		
 	}
 }

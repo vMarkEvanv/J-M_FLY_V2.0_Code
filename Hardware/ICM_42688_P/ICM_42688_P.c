@@ -15,12 +15,133 @@ unsigned char ICM_42688_Addr_AD0_HIGH_READ = 0xD3;	 //AD0高电平地址的读
 unsigned char ICM_42688_Addr_AD0_LOW_WRITE = 0xD0;	 //AD0低电平地址的写
 unsigned char ICM_42688_Addr_AD0_HIGH_WRITE = 0xD2; //AD0高电平地址的写
 
-GYRO Gyro_Get;
-GYRO Gyro_Last;
-ACC Acc_Get;
-TEMP Temp;
-ACC Acc_Last;
-extern FIX_VALUE FIXED_VALUE;
+unsigned char ICM_DATA_CONFIG_ARRAY[14] = {TEMP_DATA1, TEMP_DATA0, ACCEL_DATA_X1, ACCEL_DATA_X0,
+																					 ACCEL_DATA_Y1, ACCEL_DATA_Y0, ACCEL_DATA_Z1, ACCEL_DATA_Z0,
+																					 GYRO_DATA_X1, GYRO_DATA_X0, GYRO_DATA_Y1, GYRO_DATA_Y0,
+																					 GYRO_DATA_Z1, GYRO_DATA_Z0};
+unsigned char ICM_DATA_ARRAY[14];                                                                                                  
+GYRO Gyro_Get;                                                                                     
+GYRO Gyro_Last;                                                                                    
+ACC Acc_Get;                                                                                       
+TEMP Temp;                                                                                          
+ACC Acc_Last;                                                                                       
+extern FIX_VALUE FIXED_VALUE;                                                                       
+                                                                                                    
+void MY_DMA_Transmit_InitConfig(void)                                                               
+{                                                                                                   
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);  //??DMA??
+	DMA_DeInit(DMA1_Channel6);	
+	
+	DMA_InitTypeDef DMA_InitStructer;
+	DMA_InitStructer.DMA_PeripheralBaseAddr = (uint32_t)&I2C1->DR;   
+	DMA_InitStructer.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+	DMA_InitStructer.DMA_PeripheralInc = DMA_PeripheralInc_Disable;  
+	
+	DMA_InitStructer.DMA_MemoryBaseAddr = (uint32_t)ICM_DATA_CONFIG_ARRAY;
+	DMA_InitStructer.DMA_MemoryDataSize = DMA_PeripheralDataSize_Byte;
+	DMA_InitStructer.DMA_MemoryInc = DMA_MemoryInc_Enable;  
+	
+	DMA_InitStructer.DMA_Mode = DMA_Mode_Normal;   
+	DMA_InitStructer.DMA_DIR = DMA_DIR_PeripheralDST;  
+	DMA_InitStructer.DMA_M2M = DMA_M2M_Disable;  
+	
+	DMA_InitStructer.DMA_BufferSize = 2;
+	DMA_InitStructer.DMA_Priority = DMA_Priority_VeryHigh;
+	DMA_Init(DMA1_Channel6,&DMA_InitStructer);
+	 
+	NVIC_InitTypeDef NVIC_InitStructure;
+	//?????NVIC??
+	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel6_IRQn;  
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;  
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;  
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
+	NVIC_Init(&NVIC_InitStructure);  
+	
+	DMA_ITConfig(DMA1_Channel6, DMA_IT_TC, ENABLE);	
+}
+
+
+void MY_DMA_Receive_InitConfig(void)
+{
+	DMA_DeInit(DMA1_Channel7);	
+	
+	DMA_InitTypeDef DMA_Receive_InitStructer;
+	DMA_Receive_InitStructer.DMA_PeripheralBaseAddr = (uint32_t)&I2C1->DR;   
+	DMA_Receive_InitStructer.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+	DMA_Receive_InitStructer.DMA_PeripheralInc = DMA_PeripheralInc_Disable;  
+	
+	DMA_Receive_InitStructer.DMA_MemoryBaseAddr = (uint32_t)ICM_DATA_ARRAY;
+	DMA_Receive_InitStructer.DMA_MemoryDataSize = DMA_PeripheralDataSize_Byte;
+	DMA_Receive_InitStructer.DMA_MemoryInc = DMA_MemoryInc_Enable;  
+	
+	DMA_Receive_InitStructer.DMA_Mode = DMA_Mode_Normal;   
+	DMA_Receive_InitStructer.DMA_DIR = DMA_DIR_PeripheralSRC;   
+	DMA_Receive_InitStructer.DMA_M2M = DMA_M2M_Disable;  
+	
+	DMA_Receive_InitStructer.DMA_BufferSize = 14;
+	DMA_Receive_InitStructer.DMA_Priority = DMA_Priority_High;
+	DMA_Init(DMA1_Channel7,&DMA_Receive_InitStructer);
+	 
+	NVIC_InitTypeDef NVIC_InitStructure;
+	//?????NVIC??
+	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel7_IRQn;  
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;  
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;  
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
+	NVIC_Init(&NVIC_InitStructure);  
+	
+	 
+	DMA_ITConfig(DMA1_Channel7, DMA_IT_TC, ENABLE);	
+}
+
+
+void ICM_DMA_Transfer(void)
+{ 
+	DMA_Cmd(DMA1_Channel6, DISABLE ); 						   	
+ 	DMA_SetCurrDataCounter(DMA1_Channel6, 2);	
+ 	DMA_Cmd(DMA1_Channel6, ENABLE);  								 
+}
+
+void ICM_DMA_Recevie(void)
+{ 
+	DMA_Cmd(DMA1_Channel7, DISABLE ); 						  
+ 	DMA_SetCurrDataCounter(DMA1_Channel7, 14);	      
+ 	DMA_Cmd(DMA1_Channel7, ENABLE);  								 
+}
+
+void ICM_SendSTART(void)
+{
+	if(Send_Start_Flag)
+	{
+		if(DMA_BusyFlag == 0)
+		{
+			while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY));
+			
+			I2C_GenerateSTART(I2C1, ENABLE);//??I2C1
+			while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));/*EV5,???*/
+
+			I2C_Send7bitAddress(I2C1, ICM_42688_Addr_AD0_LOW_WRITE, I2C_Direction_Transmitter);
+			while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+			
+			ICM_DMA_Transfer();
+			
+			Send_Start_Flag = 0;    // ????AC?????,????AC??,?????,?????????????????????????
+			DMA_BusyFlag = 1;   // DMA???????,??DMA??????????????
+		}
+		else
+		{
+			return;
+		}
+	}
+	else
+	{
+		return;
+	}
+}
+
+
+
+
 
 void IIC_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT)
 {

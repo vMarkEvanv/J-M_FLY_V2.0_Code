@@ -9,7 +9,8 @@ unsigned char lut[256];
 unsigned char poly = 0xD5;//校验常数
 
 u8 Res=0;
-
+u8 RxBuf[25];
+int CNT=0;
 void CRC_INIT(){
 	unsigned char crc;
 	unsigned char crc_temp;
@@ -156,7 +157,19 @@ void USART1_IRQHandler(void)                	//串口1中断服务程序
 					{
 						
 						USART_RX_STA|=0x8000;	//接收完成了 
-						
+//						if(Res == 0xC8){
+//							for(int i=0;i<24;i++){
+//								RxBuf[i] = 0;
+//							}
+//							CNT = 0;
+//							RxBuf[CNT] = Res;
+//							
+//						}
+//						else{
+//							CNT++;
+//							RxBuf[CNT] = Res;
+//							printf("%d\r\n",RxBuf[CNT]);
+//						}
 					}
 					}
 				else //还没收到0X0D
